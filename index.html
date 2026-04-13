@@ -1,218 +1,505 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ Thống Quản Lý Tuyển Dụng & Onboarding</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>Event Operations Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .tab-active { color: #4f46e5; border-bottom: 2px solid #4f46e5; font-weight: bold; }
-        .tab-inactive { color: #94a3b8; font-weight: 500; }
-        .modal-open { overflow: hidden; }
+        :root {
+            --primary-color: #008200;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-dark: #2d3436;
+            --text-light: #636e72;
+            --border-radius: 12px;
+            --shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Upload Area */
+        .upload-section {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            border: 2px dashed #ccc;
+            text-align: center;
+            margin-bottom: 2rem;
+            transition: border-color 0.3s;
+        }
+
+        .upload-section:hover {
+            border-color: var(--primary-color);
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .btn-upload {
+            background: var(--primary-color);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        /* Filter Section */
+        .filters {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            align-items: center;
+            background: white;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+
+        select {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            outline: none;
+        }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .kpi-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            text-align: center;
+            border-bottom: 4px solid var(--primary-color);
+        }
+
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            display: block;
+        }
+
+        .kpi-label {
+            color: var(--text-light);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Charts Grid */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            min-height: 450px;
+        }
+
+        .full-width {
+            grid-column: span 2;
+        }
+
+        .chart-header {
+            margin-bottom: 1rem;
+        }
+
+        .chart-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin: 0;
+        }
+
+        .chart-desc {
+            font-size: 0.85rem;
+            color: var(--text-light);
+        }
+
+        /* Table */
+        .table-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        th {
+            background: #f8f9fa;
+            text-align: left;
+            padding: 1rem;
+            font-size: 0.9rem;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9rem;
+        }
+
+        #dashboardContent {
+            display: none;
+        }
+
+        @media (max-width: 992px) {
+            .charts-grid { grid-template-columns: 1fr; }
+            .full-width { grid-column: span 1; }
+        }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen">
+<body>
 
-    <nav class="bg-white border-b border-slate-200 px-8 py-4 sticky top-0 z-40 shadow-sm">
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <div class="flex space-x-8" id="tab-container">
-                <button onclick="switchTab(1)" id="tab-1" class="tab-active pb-1 uppercase text-sm tracking-wider">1. RECRUITMENT</button>
-                <button onclick="switchTab(2)" id="tab-2" class="tab-inactive pb-1 hover:text-slate-600 uppercase text-sm tracking-wider">2. INTERVIEW & ACCEPTANCE</button>
-                <button onclick="switchTab(3)" id="tab-3" class="tab-inactive pb-1 hover:text-slate-600 uppercase text-sm tracking-wider">3. ONBOARDING</button>
-            </div>
-            <button onclick="openModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-indigo-100 transition-all">
-                <i class="fas fa-user-plus mr-2"></i> Thêm ứng viên mới
-            </button>
-        </div>
-    </nav>
+<header>
+    <div style="font-weight: 700; font-size: 1.5rem;">EVENT OPS MONITOR</div>
+    <div id="status">Please upload your dataset.csv</div>
+</header>
 
-    <main class="max-w-7xl mx-auto p-8">
-        <div class="mb-8">
-            <h1 class="text-2xl font-bold text-slate-800">Tiến trình Tuyển dụng & Tiếp nhận</h1>
-            <p class="text-slate-500 text-sm italic">Quản lý hồ sơ qua các cấp: Dept Manager, BOD, HR & Admin [cite: 3, 4, 7]</p>
-        </div>
-
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left">
-                    <thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
-                        <tr>
-                            <th class="p-5">Ứng viên</th>
-                            <th class="p-5">Thông tin định danh (CCCD)</th>
-                            <th class="p-5">Vị trí & Cấp bậc</th>
-                            <th class="p-5 text-center">Hồ sơ CV</th>
-                            <th class="p-5 text-right">Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody id="candidate-table-body" class="divide-y divide-slate-100">
-                        </tbody>
-                </table>
-            </div>
-        </div>
-    </main>
-
-    <div id="modalOverlay" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeModal()"></div>
-        
-        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl z-50 overflow-hidden relative border border-slate-200">
-            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                <h3 class="text-xl font-bold text-slate-800">Hồ sơ ứng viên mới</h3>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-red-500 transition">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
-            </div>
-            
-            <form id="addCandidateForm" class="p-6 grid grid-cols-2 gap-4 max-h-[70vh] overflow-y-auto">
-                <div class="col-span-2">
-                    <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Họ và Tên *</label>
-                    <input type="text" id="fullName" required placeholder="Nhập tên đầy đủ" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none border-slate-200">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Ngày tháng năm sinh</label>
-                    <input type="date" id="dob" class="w-full p-2.5 border rounded-lg border-slate-200">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Giới tính</label>
-                    <select id="gender" class="w-full p-2.5 border rounded-lg border-slate-200 bg-white">
-                        <option>Nam</option>
-                        <option>Nữ</option>
-                        <option>Khác</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Số CCCD</label>
-                    <input type="text" id="cccd" placeholder="Số căn cước" class="w-full p-2.5 border rounded-lg border-slate-200">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Ngày cấp CCCD</label>
-                    <input type="date" id="cccd_date" class="w-full p-2.5 border rounded-lg border-slate-200">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Số điện thoại</label>
-                    <input type="tel" id="phone" placeholder="090..." class="w-full p-2.5 border rounded-lg border-slate-200">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Email liên hệ</label>
-                    <input type="email" id="email" placeholder="email@congty.com" class="w-full p-2.5 border rounded-lg border-slate-200">
-                </div>
-                <div class="col-span-2">
-                    <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Địa chỉ cư trú</label>
-                    <input type="text" id="address" placeholder="Địa chỉ hiện tại" class="w-full p-2.5 border rounded-lg border-slate-200">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Vị trí ứng tuyển</label>
-                    <input type="text" id="position" placeholder="Ví dụ: Kế toán" class="w-full p-2.5 border rounded-lg border-slate-200">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Cấp bậc</label>
-                    <select id="level" class="w-full p-2.5 border rounded-lg border-slate-200 bg-white">
-                        <option>Intern</option>
-                        <option>Junior</option>
-                        <option>Middle</option>
-                        <option>Senior</option>
-                        <option>Manager/Lead</option>
-                    </select>
-                </div>
-
-                <div class="col-span-2 mt-6 flex justify-end space-x-3 bg-white pt-4 border-t">
-                    <button type="button" onclick="closeModal()" class="px-6 py-2.5 text-slate-400 font-semibold hover:bg-slate-100 rounded-lg transition">Hủy bỏ</button>
-                    <button type="submit" class="bg-indigo-600 text-white px-8 py-2.5 rounded-lg font-bold shadow-lg hover:bg-indigo-700 transition">Lưu hồ sơ</button>
-                </div>
-            </form>
-        </div>
+<div class="container">
+    <div class="upload-section" id="dropZone">
+        <h3>Drop CSV file here or</h3>
+        <label for="fileInput" class="btn-upload">Choose CSV File</label>
+        <input type="file" id="fileInput" accept=".csv">
+        <p style="margin-top: 10px; color: #666;">Data remains private in your browser</p>
     </div>
 
-    <script>
-        // DANH SÁCH 5 ỨNG VIÊN MẪU (Theo các giai đoạn trong quy trình [cite: 3, 5, 2, 1])
-        let candidates = [
-            { id: 1, name: "Nguyễn Văn An", email: "an.nguyen@email.com", cccd: "0123456789", date: "01/01/2020", role: "Kỹ sư Phần mềm", level: "Senior", stage: 1 },
-            { id: 2, name: "Lê Thị Mai", email: "mai.le@email.com", cccd: "0987654321", date: "15/05/2021", role: "Trưởng phòng Marketing", level: "Manager", stage: 2 },
-            { id: 3, name: "Trần Minh Tâm", email: "tam.tran@email.com", cccd: "044123888", date: "10/10/2022", role: "Kế toán trưởng", level: "Senior", stage: 3 },
-            { id: 4, name: "Phạm Minh Đức", email: "duc.pham@email.com", cccd: "0310990012", date: "20/02/2019", role: "UI/UX Designer", level: "Junior", stage: 1 },
-            { id: 5, name: "Hoàng Thanh Thảo", email: "thao.hoang@email.com", cccd: "0250880056", date: "12/12/2023", role: "Chuyên viên HR", level: "Middle", stage: 2 }
-        ];
+    <div id="dashboardContent">
+        <div class="filters">
+            <span>Filter by Province:</span>
+            <select id="provinceFilter">
+                <option value="All">All Provinces</option>
+            </select>
+        </div>
 
-        // Mở/Đóng Modal
-        function openModal() {
-            document.getElementById('modalOverlay').classList.remove('hidden');
-            document.body.classList.add('modal-open');
-        }
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <span class="kpi-label">Total Events</span>
+                <span id="kpiTotalEvents" class="kpi-value">0</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Urgent Events</span>
+                <span id="kpiUrgent" class="kpi-value">0</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Avg Tables</span>
+                <span id="kpiAvgTables" class="kpi-value">0</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Urgent Rate</span>
+                <span id="kpiUrgentRate" class="kpi-value">0%</span>
+            </div>
+        </div>
 
-        function closeModal() {
-            document.getElementById('modalOverlay').classList.add('hidden');
-            document.body.classList.remove('modal-open');
-            document.getElementById('addCandidateForm').reset();
-        }
+        <div class="charts-grid">
+            <div class="chart-container full-width">
+                <div class="chart-header">
+                    <p class="chart-title">Event Trends Over Time</p>
+                    <p class="chart-desc">Monitor daily event spikes to optimize operations.</p>
+                </div>
+                <div id="trendChart"></div>
+            </div>
 
-        // Lưu ứng viên mới
-        document.getElementById('addCandidateForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const newCand = {
-                id: Date.now(),
-                name: document.getElementById('fullName').value,
-                email: document.getElementById('email').value,
-                cccd: document.getElementById('cccd').value,
-                date: document.getElementById('cccd_date').value || "Chưa cập nhật",
-                role: document.getElementById('position').value,
-                level: document.getElementById('level').value,
-                stage: 1 // Mặc định vào bước 1 Recruitment [cite: 5]
-            };
-            candidates.push(newCand);
-            closeModal();
-            switchTab(1); // Tự động về Tab 1 để xem ứng viên mới
+            <div class="chart-container">
+                <div class="chart-header">
+                    <p class="chart-title">Events by District & Type</p>
+                    <p class="chart-desc">Stacked bars showing volume and composition of events.</p>
+                </div>
+                <div id="districtTypeChart"></div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-header">
+                    <p class="chart-title">Urgent Risk by District</p>
+                    <p class="chart-desc">Bars: Urgent count | Line: % Urgent Rate.</p>
+                </div>
+                <div id="urgentRiskChart"></div>
+            </div>
+
+            <div class="chart-container full-width">
+                <div class="chart-header">
+                    <p class="chart-title">Caterer Performance (Top 20)</p>
+                    <p class="chart-desc">Horizontal bars comparing total tables served by each agency.</p>
+                </div>
+                <div id="catererChart"></div>
+            </div>
+        </div>
+
+        <div class="table-section">
+            <p class="chart-title">Raw Data Preview (Recent 100)</p>
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Province</th>
+                        <th>District</th>
+                        <th>Date</th>
+                        <th>Tables</th>
+                        <th>Type</th>
+                        <th>Caterer</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    let rawData = [];
+    const colorPalette = ['#008200', '#2ecc71', '#f1c40f', '#e67e22', '#e74c3c', '#3498db'];
+
+    // --- File Handling ---
+    document.getElementById('fileInput').addEventListener('change', handleFile);
+    
+    function handleFile(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        Papa.parse(file, {
+            header: true,
+            dynamicTyping: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+                rawData = results.data;
+                initDashboard();
+            }
+        });
+    }
+
+    // --- Core Dashboard Logic ---
+    function initDashboard() {
+        document.getElementById('dropZone').style.display = 'none';
+        document.getElementById('dashboardContent').style.display = 'block';
+        document.getElementById('status').innerText = 'Data Loaded Successfully';
+
+        populateFilter();
+        updateCharts();
+
+        document.getElementById('provinceFilter').addEventListener('change', updateCharts);
+    }
+
+    function populateFilter() {
+        const provinces = [...new Set(rawData.map(d => d['Tỉnh']))].filter(Boolean).sort();
+        const select = document.getElementById('provinceFilter');
+        provinces.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p;
+            opt.innerText = p;
+            select.appendChild(opt);
+        });
+    }
+
+    function updateCharts() {
+        const province = document.getElementById('provinceFilter').value;
+        const filteredData = province === 'All' ? rawData : rawData.filter(d => d['Tỉnh'] === province);
+
+        renderKPIs(filteredData);
+        renderTrendChart(filteredData);
+        renderDistrictTypeChart(filteredData);
+        renderUrgentRiskChart(filteredData);
+        renderCatererChart(filteredData);
+        renderTable(filteredData);
+    }
+
+    // --- Data Processing Helpers ---
+    const isUrgent = (d) => (d['Tiệc gấp<48h'] || d['Tiệc gấp<4h']) ? 1 : 0;
+
+    // --- Rendering Functions ---
+    function renderKPIs(data) {
+        const total = data.length;
+        const urgent = data.filter(d => isUrgent(d)).length;
+        const avgTables = data.reduce((acc, curr) => acc + (curr['Số bàn đặt'] || 0), 0) / total;
+        
+        document.getElementById('kpiTotalEvents').innerText = total.toLocaleString();
+        document.getElementById('kpiUrgent').innerText = urgent.toLocaleString();
+        document.getElementById('kpiAvgTables').innerText = Math.round(avgTables).toLocaleString();
+        document.getElementById('kpiUrgentRate').innerText = ((urgent/total)*100).toFixed(1) + '%';
+    }
+
+    function renderTrendChart(data) {
+        const counts = {};
+        data.forEach(d => {
+            const date = d['Ngày diễn ra tiệc'];
+            if(date) counts[date] = (counts[date] || 0) + 1;
         });
 
-        // Hiển thị dữ liệu theo Tab
-        function renderTable(stageId) {
-            const tbody = document.getElementById('candidate-table-body');
-            const filtered = candidates.filter(c => c.stage === stageId);
-            
-            tbody.innerHTML = filtered.length > 0 ? filtered.map(c => `
-                <tr class="hover:bg-slate-50 transition-colors group">
-                    <td class="p-5">
-                        <div class="font-bold text-slate-700">${c.name}</div>
-                        <div class="text-xs text-slate-400 font-medium">${c.email}</div>
-                    </td>
-                    <td class="p-5 text-sm text-slate-600">
-                        <div class="font-medium text-slate-700">CCCD: ${c.cccd}</div>
-                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Ngày cấp: ${c.date}</div>
-                    </td>
-                    <td class="p-5">
-                        <div class="text-sm font-semibold text-slate-800">${c.role}</div>
-                        <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-bold uppercase border border-slate-200">${c.level}</span>
-                    </td>
-                    <td class="p-5 text-center">
-                        <i class="fas fa-file-pdf text-red-500 text-xl cursor-pointer hover:scale-125 transition-transform shadow-sm"></i>
-                    </td>
-                    <td class="p-5 text-right">
-                        <button class="text-indigo-600 hover:text-indigo-900 text-sm font-bold flex items-center justify-end w-full group">
-                            Xem chi tiết <i class="fas fa-arrow-right ml-2 text-xs group-hover:translate-x-1 transition-transform"></i>
-                        </button>
-                    </td>
-                </tr>
-            `).join('') : `<tr><td colspan="5" class="p-20 text-center text-slate-400 italic">Giai đoạn này hiện chưa có hồ sơ nhân sự [cite: 9]</td></tr>`;
-        }
+        const sortedDates = Object.keys(counts).sort((a,b) => {
+            const [d1, m1, y1] = a.split('/');
+            const [d2, m2, y2] = b.split('/');
+            return new Date(y1, m1-1, d1) - new Date(y2, m2-1, d2);
+        });
 
-        // Logic Chuyển Tab
-        function switchTab(stageId) {
-            for (let i = 1; i <= 3; i++) {
-                const tab = document.getElementById(`tab-${i}`);
-                if (i === stageId) {
-                    tab.classList.add('tab-active');
-                    tab.classList.remove('tab-inactive');
-                } else {
-                    tab.classList.remove('tab-active');
-                    tab.classList.add('tab-inactive');
-                }
-            }
-            renderTable(stageId);
-        }
+        const trace = {
+            x: sortedDates,
+            y: sortedDates.map(date => counts[date]),
+            type: 'scatter',
+            mode: 'lines+markers',
+            line: {color: '#008200', width: 3},
+            name: 'Total Orders'
+        };
 
-        // Khởi tạo hiển thị Tab 1 mặc định
-        renderTable(1);
-    </script>
+        Plotly.newPlot('trendChart', [trace], {
+            margin: {t: 10, r: 10, l: 40, b: 40},
+            height: 350
+        });
+    }
+
+    function renderDistrictTypeChart(data) {
+        const districts = [...new Set(data.map(d => d['Huyện']))].filter(Boolean);
+        const types = [...new Set(data.map(d => d['Loại tiệc']))].filter(Boolean);
+        
+        const traces = types.map((type, i) => {
+            return {
+                x: districts,
+                y: districts.map(h => data.filter(d => d['Huyện'] === h && d['Loại tiệc'] === type).length),
+                name: type,
+                type: 'bar',
+                marker: {color: colorPalette[i % colorPalette.length]}
+            };
+        });
+
+        Plotly.newPlot('districtTypeChart', traces, {
+            barmode: 'stack',
+            margin: {t: 10, r: 10, l: 40, b: 80},
+            height: 400,
+            xaxis: {tickangle: -45}
+        });
+    }
+
+    function renderUrgentRiskChart(data) {
+        const districts = [...new Set(data.map(d => d['Huyện']))].filter(Boolean);
+        
+        const urgentCounts = districts.map(h => {
+            const districtData = data.filter(d => d['Huyện'] === h);
+            const urgent = districtData.filter(d => isUrgent(d)).length;
+            const rate = (urgent / districtData.length) * 100;
+            return {h, urgent, rate};
+        }).sort((a,b) => b.urgent - a.urgent).slice(0, 15);
+
+        const traceBar = {
+            x: urgentCounts.map(i => i.h),
+            y: urgentCounts.map(i => i.urgent),
+            name: 'Urgent Count',
+            type: 'bar',
+            marker: {color: '#e74c3c'}
+        };
+
+        const traceLine = {
+            x: urgentCounts.map(i => i.h),
+            y: urgentCounts.map(i => i.rate),
+            name: 'Urgent Rate (%)',
+            type: 'scatter',
+            yaxis: 'y2',
+            line: {color: '#2d3436'}
+        };
+
+        const layout = {
+            margin: {t: 10, r: 50, l: 40, b: 80},
+            height: 400,
+            showlegend: true,
+            yaxis2: { overlaying: 'y', side: 'right', range: [0, 100], title: '%' },
+            xaxis: {tickangle: -45}
+        };
+
+        Plotly.newPlot('urgentRiskChart', [traceBar, traceLine], layout);
+    }
+
+    function renderCatererChart(data) {
+        const caterers = {};
+        data.forEach(d => {
+            const name = d['Caterer Name'] || 'Unknown';
+            caterers[name] = (caterers[name] || 0) + (d['Số bàn đặt'] || 0);
+        });
+
+        const sorted = Object.entries(caterers)
+            .sort((a,b) => a[1] - b[1])
+            .slice(-20);
+
+        const trace = {
+            y: sorted.map(i => i[0]),
+            x: sorted.map(i => i[1]),
+            type: 'bar',
+            orientation: 'h',
+            marker: {color: '#008200'}
+        };
+
+        Plotly.newPlot('catererChart', [trace], {
+            margin: {t: 10, r: 10, l: 200, b: 40},
+            height: 500
+        });
+    }
+
+    function renderTable(data) {
+        const tbody = document.querySelector('#dataTable tbody');
+        tbody.innerHTML = '';
+        data.slice(0, 100).forEach(d => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${d['OrderID'] || ''}</td>
+                <td>${d['Tỉnh'] || ''}</td>
+                <td>${d['Huyện'] || ''}</td>
+                <td>${d['Ngày diễn ra tiệc'] || ''}</td>
+                <td>${d['Số bàn đặt'] || 0}</td>
+                <td>${d['Loại tiệc'] || ''}</td>
+                <td>${d['Caterer Name'] || ''}</td>
+                <td style="color: ${isUrgent(d) ? '#e74c3c' : '#2ecc71'}">${isUrgent(d) ? 'Urgent' : 'Normal'}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+</script>
+
 </body>
 </html>
