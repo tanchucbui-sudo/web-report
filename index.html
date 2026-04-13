@@ -3,106 +3,216 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản Lý Tuyển Dụng Nhân Sự</title>
+    <title>Hệ Thống Quản Lý Tuyển Dụng & Onboarding</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
         body { font-family: 'Inter', sans-serif; }
+        .tab-active { color: #4f46e5; border-bottom: 2px solid #4f46e5; font-weight: bold; }
+        .tab-inactive { color: #94a3b8; font-weight: 500; }
+        .modal-open { overflow: hidden; }
     </style>
 </head>
-<body class="bg-gray-50 p-8">
+<body class="bg-slate-50 min-h-screen">
 
-    <div class="max-w-7xl mx-auto">
-        <div class="flex justify-between items-center mb-8">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-800 tracking-tight">Danh Sách Tuyển Dụng</h1>
-                <p class="text-gray-500">Cập nhật hồ sơ và trạng thái ứng viên thời gian thực</p>
+    <nav class="bg-white border-b border-slate-200 px-8 py-4 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex space-x-8" id="tab-container">
+                <button onclick="switchTab(1)" id="tab-1" class="tab-active pb-1 uppercase text-sm tracking-wider">1. RECRUITMENT</button>
+                <button onclick="switchTab(2)" id="tab-2" class="tab-inactive pb-1 hover:text-slate-600 uppercase text-sm tracking-wider">2. INTERVIEW & ACCEPTANCE</button>
+                <button onclick="switchTab(3)" id="tab-3" class="tab-inactive pb-1 hover:text-slate-600 uppercase text-sm tracking-wider">3. ONBOARDING</button>
             </div>
-            <button class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg shadow-sm transition-all flex items-center">
-                <i class="fas fa-plus mr-2 text-sm"></i> Thêm ứng viên mới
+            <button onclick="openModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-indigo-100 transition-all">
+                <i class="fas fa-user-plus mr-2"></i> Thêm ứng viên mới
             </button>
         </div>
+    </nav>
 
-        <div class="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-200">
+    <main class="max-w-7xl mx-auto p-8">
+        <div class="mb-8">
+            <h1 class="text-2xl font-bold text-slate-800">Tiến trình Tuyển dụng & Tiếp nhận</h1>
+            <p class="text-slate-500 text-sm italic">Quản lý hồ sơ qua các cấp: Dept Manager, BOD, HR & Admin [cite: 3, 4, 7]</p>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead class="bg-gray-50 border-b border-gray-200">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
                         <tr>
-                            <th class="p-5 font-semibold text-gray-600 uppercase text-xs tracking-wider">Họ tên</th>
-                            <th class="p-5 font-semibold text-gray-600 uppercase text-xs tracking-wider text-center">Năm sinh</th>
-                            <th class="p-5 font-semibold text-gray-600 uppercase text-xs tracking-wider">Phòng ban</th>
-                            <th class="p-5 font-semibold text-gray-600 uppercase text-xs tracking-wider">Vị trí / Cấp bậc</th>
-                            <th class="p-5 font-semibold text-gray-600 uppercase text-xs tracking-wider text-center font-bold text-blue-600">Hồ sơ CV</th>
-                            <th class="p-5 font-semibold text-gray-600 uppercase text-xs tracking-wider">Ngày ứng tuyển</th>
-                            <th class="p-5 font-semibold text-gray-600 uppercase text-xs tracking-wider">Giai đoạn</th>
+                            <th class="p-5">Ứng viên</th>
+                            <th class="p-5">Thông tin định danh (CCCD)</th>
+                            <th class="p-5">Vị trí & Cấp bậc</th>
+                            <th class="p-5 text-center">Hồ sơ CV</th>
+                            <th class="p-5 text-right">Thao tác</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        <tr class="hover:bg-blue-50/50 transition-colors group">
-                            <td class="p-5 font-medium text-gray-900">Nguyễn Văn An</td>
-                            <td class="p-5 text-center text-gray-600">1995</td>
-                            <td class="p-5 text-gray-600">Công nghệ thông tin</td>
-                            <td class="p-5">
-                                <span class="block text-gray-900 font-semibold">Backend Developer</span>
-                                <span class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold uppercase">Senior</span>
-                            </td>
-                            <td class="p-5 text-center">
-                                <a href="#" class="text-red-500 hover:text-red-700 transition-transform group-hover:scale-110 inline-block" title="Xem CV PDF">
-                                    <i class="fas fa-file-pdf text-2xl"></i>
-                                </a>
-                            </td>
-                            <td class="p-5 text-gray-500 text-sm">15/03/2026</td>
-                            <td class="p-5">
-                                <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium border border-yellow-200">Phỏng vấn chuyên môn</span>
-                            </td>
-                        </tr>
-                        <tr class="hover:bg-blue-50/50 transition-colors group">
-                            <td class="p-5 font-medium text-gray-900">Trần Thị Thanh</td>
-                            <td class="p-5 text-center text-gray-600">1998</td>
-                            <td class="p-5 text-gray-600">Marketing</td>
-                            <td class="p-5">
-                                <span class="block text-gray-900 font-semibold">Content Creator</span>
-                                <span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-bold uppercase">Junior</span>
-                            </td>
-                            <td class="p-5 text-center">
-                                <a href="#" class="text-blue-500 hover:text-blue-700 transition-transform group-hover:scale-110 inline-block" title="Xem CV Drive">
-                                    <i class="fas fa-link text-xl"></i>
-                                </a>
-                            </td>
-                            <td class="p-5 text-gray-500 text-sm">20/03/2026</td>
-                            <td class="p-5">
-                                <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium border border-green-200">Đã onboard</span>
-                            </td>
-                        </tr>
-                        <tr class="hover:bg-blue-50/50 transition-colors group">
-                            <td class="p-5 font-medium text-gray-900">Lê Hoàng Nam</td>
-                            <td class="p-5 text-center text-gray-600">1992</td>
-                            <td class="p-5 text-gray-600">Kinh doanh</td>
-                            <td class="p-5">
-                                <span class="block text-gray-900 font-semibold">Sales Manager</span>
-                                <span class="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-bold uppercase">Lead</span>
-                            </td>
-                            <td class="p-5 text-center">
-                                <a href="#" class="text-red-500 hover:text-red-700 transition-transform group-hover:scale-110 inline-block" title="Xem CV PDF">
-                                    <i class="fas fa-file-pdf text-2xl"></i>
-                                </a>
-                            </td>
-                            <td class="p-5 text-gray-500 text-sm">22/03/2026</td>
-                            <td class="p-5">
-                                <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium border border-blue-200">Sàng lọc hồ sơ</span>
-                            </td>
-                        </tr>
-                    </tbody>
+                    <tbody id="candidate-table-body" class="divide-y divide-slate-100">
+                        </tbody>
                 </table>
             </div>
         </div>
+    </main>
 
-        <div class="mt-6 flex items-center text-gray-400 text-xs">
-            <i class="fas fa-info-circle mr-2"></i>
-            <span>Mẹo: Nhấn vào biểu tượng <i class="fas fa-file-pdf mx-1"></i> để mở file hồ sơ đính kèm của ứng viên.</span>
+    <div id="modalOverlay" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeModal()"></div>
+        
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl z-50 overflow-hidden relative border border-slate-200">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h3 class="text-xl font-bold text-slate-800">Hồ sơ ứng viên mới</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-red-500 transition">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <form id="addCandidateForm" class="p-6 grid grid-cols-2 gap-4 max-h-[70vh] overflow-y-auto">
+                <div class="col-span-2">
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Họ và Tên *</label>
+                    <input type="text" id="fullName" required placeholder="Nhập tên đầy đủ" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none border-slate-200">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Ngày tháng năm sinh</label>
+                    <input type="date" id="dob" class="w-full p-2.5 border rounded-lg border-slate-200">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Giới tính</label>
+                    <select id="gender" class="w-full p-2.5 border rounded-lg border-slate-200 bg-white">
+                        <option>Nam</option>
+                        <option>Nữ</option>
+                        <option>Khác</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Số CCCD</label>
+                    <input type="text" id="cccd" placeholder="Số căn cước" class="w-full p-2.5 border rounded-lg border-slate-200">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Ngày cấp CCCD</label>
+                    <input type="date" id="cccd_date" class="w-full p-2.5 border rounded-lg border-slate-200">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Số điện thoại</label>
+                    <input type="tel" id="phone" placeholder="090..." class="w-full p-2.5 border rounded-lg border-slate-200">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Email liên hệ</label>
+                    <input type="email" id="email" placeholder="email@congty.com" class="w-full p-2.5 border rounded-lg border-slate-200">
+                </div>
+                <div class="col-span-2">
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Địa chỉ cư trú</label>
+                    <input type="text" id="address" placeholder="Địa chỉ hiện tại" class="w-full p-2.5 border rounded-lg border-slate-200">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Vị trí ứng tuyển</label>
+                    <input type="text" id="position" placeholder="Ví dụ: Kế toán" class="w-full p-2.5 border rounded-lg border-slate-200">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Cấp bậc</label>
+                    <select id="level" class="w-full p-2.5 border rounded-lg border-slate-200 bg-white">
+                        <option>Intern</option>
+                        <option>Junior</option>
+                        <option>Middle</option>
+                        <option>Senior</option>
+                        <option>Manager/Lead</option>
+                    </select>
+                </div>
+
+                <div class="col-span-2 mt-6 flex justify-end space-x-3 bg-white pt-4 border-t">
+                    <button type="button" onclick="closeModal()" class="px-6 py-2.5 text-slate-400 font-semibold hover:bg-slate-100 rounded-lg transition">Hủy bỏ</button>
+                    <button type="submit" class="bg-indigo-600 text-white px-8 py-2.5 rounded-lg font-bold shadow-lg hover:bg-indigo-700 transition">Lưu hồ sơ</button>
+                </div>
+            </form>
         </div>
     </div>
 
+    <script>
+        // DANH SÁCH 5 ỨNG VIÊN MẪU (Theo các giai đoạn trong quy trình [cite: 3, 5, 2, 1])
+        let candidates = [
+            { id: 1, name: "Nguyễn Văn An", email: "an.nguyen@email.com", cccd: "0123456789", date: "01/01/2020", role: "Kỹ sư Phần mềm", level: "Senior", stage: 1 },
+            { id: 2, name: "Lê Thị Mai", email: "mai.le@email.com", cccd: "0987654321", date: "15/05/2021", role: "Trưởng phòng Marketing", level: "Manager", stage: 2 },
+            { id: 3, name: "Trần Minh Tâm", email: "tam.tran@email.com", cccd: "044123888", date: "10/10/2022", role: "Kế toán trưởng", level: "Senior", stage: 3 },
+            { id: 4, name: "Phạm Minh Đức", email: "duc.pham@email.com", cccd: "0310990012", date: "20/02/2019", role: "UI/UX Designer", level: "Junior", stage: 1 },
+            { id: 5, name: "Hoàng Thanh Thảo", email: "thao.hoang@email.com", cccd: "0250880056", date: "12/12/2023", role: "Chuyên viên HR", level: "Middle", stage: 2 }
+        ];
+
+        // Mở/Đóng Modal
+        function openModal() {
+            document.getElementById('modalOverlay').classList.remove('hidden');
+            document.body.classList.add('modal-open');
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').classList.add('hidden');
+            document.body.classList.remove('modal-open');
+            document.getElementById('addCandidateForm').reset();
+        }
+
+        // Lưu ứng viên mới
+        document.getElementById('addCandidateForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const newCand = {
+                id: Date.now(),
+                name: document.getElementById('fullName').value,
+                email: document.getElementById('email').value,
+                cccd: document.getElementById('cccd').value,
+                date: document.getElementById('cccd_date').value || "Chưa cập nhật",
+                role: document.getElementById('position').value,
+                level: document.getElementById('level').value,
+                stage: 1 // Mặc định vào bước 1 Recruitment [cite: 5]
+            };
+            candidates.push(newCand);
+            closeModal();
+            switchTab(1); // Tự động về Tab 1 để xem ứng viên mới
+        });
+
+        // Hiển thị dữ liệu theo Tab
+        function renderTable(stageId) {
+            const tbody = document.getElementById('candidate-table-body');
+            const filtered = candidates.filter(c => c.stage === stageId);
+            
+            tbody.innerHTML = filtered.length > 0 ? filtered.map(c => `
+                <tr class="hover:bg-slate-50 transition-colors group">
+                    <td class="p-5">
+                        <div class="font-bold text-slate-700">${c.name}</div>
+                        <div class="text-xs text-slate-400 font-medium">${c.email}</div>
+                    </td>
+                    <td class="p-5 text-sm text-slate-600">
+                        <div class="font-medium text-slate-700">CCCD: ${c.cccd}</div>
+                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Ngày cấp: ${c.date}</div>
+                    </td>
+                    <td class="p-5">
+                        <div class="text-sm font-semibold text-slate-800">${c.role}</div>
+                        <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-bold uppercase border border-slate-200">${c.level}</span>
+                    </td>
+                    <td class="p-5 text-center">
+                        <i class="fas fa-file-pdf text-red-500 text-xl cursor-pointer hover:scale-125 transition-transform shadow-sm"></i>
+                    </td>
+                    <td class="p-5 text-right">
+                        <button class="text-indigo-600 hover:text-indigo-900 text-sm font-bold flex items-center justify-end w-full group">
+                            Xem chi tiết <i class="fas fa-arrow-right ml-2 text-xs group-hover:translate-x-1 transition-transform"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('') : `<tr><td colspan="5" class="p-20 text-center text-slate-400 italic">Giai đoạn này hiện chưa có hồ sơ nhân sự [cite: 9]</td></tr>`;
+        }
+
+        // Logic Chuyển Tab
+        function switchTab(stageId) {
+            for (let i = 1; i <= 3; i++) {
+                const tab = document.getElementById(`tab-${i}`);
+                if (i === stageId) {
+                    tab.classList.add('tab-active');
+                    tab.classList.remove('tab-inactive');
+                } else {
+                    tab.classList.remove('tab-active');
+                    tab.classList.add('tab-inactive');
+                }
+            }
+            renderTable(stageId);
+        }
+
+        // Khởi tạo hiển thị Tab 1 mặc định
+        renderTable(1);
+    </script>
 </body>
 </html>
