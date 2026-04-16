@@ -1,277 +1,198 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional Banquet Dashboard - V8 Final</title>
+    <title>Banquet Dashboard - Fix Version</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
     <style>
         :root { --primary: #008200; --bg: #f4f7f6; --white: #ffffff; --text: #2d3436; }
-        * { box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; color: var(--text); }
-        
-        header { background: var(--primary); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .header-actions { display: flex; gap: 10px; align-items: center; }
-        
-        .btn { padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; border: none; transition: 0.3s; font-size: 14px; text-decoration: none; display: inline-flex; align-items: center; }
-        .btn-upload { background: white; color: var(--primary); }
+        header { background: var(--primary); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .btn { padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; border: none; font-size: 14px; display: inline-flex; align-items: center; transition: 0.3s; }
+        .btn-upload { background: white; color: var(--primary); margin-right: 10px; }
         .btn-download { background: #27ae60; color: white; border: 1px solid rgba(255,255,255,0.3); }
-        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
-
         .container { max-width: 1200px; margin: 20px auto; padding: 0 20px; }
-        .filter-section { background: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        select { padding: 8px; border-radius: 5px; border: 1px solid #ddd; min-width: 200px; }
-
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; background: white; padding: 10px 10px 0; border-radius: 10px 10px 0 0; }
-        .tab { padding: 12px 24px; cursor: pointer; font-weight: 700; color: #636e72; border-bottom: 3px solid transparent; transition: 0.3s; }
-        .tab.active { color: var(--primary); border-bottom-color: var(--primary); background: #f0fff0; }
-
+        .filter-section { background: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; }
+        .tab { padding: 12px 24px; cursor: pointer; font-weight: 700; color: #636e72; border-bottom: 3px solid transparent; }
+        .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
         .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 20px; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .kpi-card { text-align: center; }
-        .kpi-value { font-size: 24px; font-weight: 700; color: var(--primary); margin: 10px 0 5px; }
-        .kpi-label { font-size: 13px; color: #636e72; text-transform: uppercase; }
-
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); min-height: 100px; }
+        .kpi-value { font-size: 24px; font-weight: 700; color: var(--primary); }
         .chart-row { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; margin-bottom: 20px; }
-        h3 { margin-top: 0; font-size: 16px; border-left: 4px solid var(--primary); padding-left: 10px; margin-bottom: 15px; }
-
+        h3 { margin-top: 0; font-size: 16px; border-left: 4px solid var(--primary); padding-left: 10px; }
         #tableContainer { overflow-x: auto; background: white; border-radius: 12px; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th { background: #f8f9fa; text-align: left; padding: 12px; border-bottom: 2px solid #eee; }
-        td { padding: 12px; border-bottom: 1px solid #eee; }
-        
-        #loadingOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); display: none; justify-content: center; align-items: center; z-index: 1000; font-weight: 600; color: var(--primary); }
+        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
+        #loading { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); display:none; justify-content:center; align-items:center; z-index:9999; }
     </style>
 </head>
 <body>
 
-<div id="loadingOverlay">Đang xử lý dữ liệu...</div>
+<div id="loading">Đang tải dữ liệu...</div>
 
 <header>
     <div style="font-size: 20px; font-weight: 700;">BANQUET ANALYTICS</div>
-    <div class="header-actions">
-        <label class="btn btn-upload">
-            📤 UPLOAD CSV <input type="file" id="csvFile" accept=".csv" hidden>
-        </label>
-        <button id="downloadBtn" class="btn btn-download">📥 DOWNLOAD CSV</button>
+    <div>
+        <label class="btn btn-upload">📤 TẢI CSV MỚI <input type="file" id="csvFile" accept=".csv" hidden></label>
+        <button id="downloadBtn" class="btn btn-download">📥 XUẤT BÁO CÁO</button>
     </div>
 </header>
 
 <div class="container">
     <div class="filter-section">
-        <strong>Bộ lọc nhanh:</strong>
+        <strong>Lọc theo Tỉnh:</strong>
         <select id="provinceFilter"><option value="All">Tất cả Tỉnh thành</option></select>
     </div>
 
     <div class="tabs">
-        <div id="tabOverview" class="tab active" onclick="switchTab('overview')">📊 OVERVIEW</div>
-        <div id="tabRegion" class="tab" onclick="switchTab('region')">🌍 REGION ANALYSIS</div>
+        <div id="tab1" class="tab active" onclick="switchTab('overview')">TỔNG QUAN</div>
+        <div id="tab2" class="tab" onclick="switchTab('region')">PHÂN TÍCH VÙNG</div>
     </div>
 
     <div id="overviewContent">
-        <div class="grid" id="kpiGrid">
-            <div class="card kpi-card"><div class="kpi-label">Tổng đơn tiệc</div><div id="totalOrders" class="kpi-value">-</div></div>
-            <div class="card kpi-card"><div class="kpi-label">Tiệc Gấp (<48h)</div><div id="urgentOrders" class="kpi-value">-</div></div>
-            <div class="card kpi-card"><div class="kpi-label">Tỉnh thành</div><div id="totalProvinces" class="kpi-value">-</div></div>
-            <div class="card kpi-card"><div class="kpi-label">Đại lý nấu tiệc</div><div id="totalCaterers" class="kpi-value">-</div></div>
+        <div class="grid">
+            <div class="card"><div>Tổng đơn tiệc</div><div id="totalOrders" class="kpi-value">0</div></div>
+            <div class="card"><div>Tiệc Gấp</div><div id="urgentOrders" class="kpi-value">0</div></div>
+            <div class="card"><div>Tỉnh thành</div><div id="totalProvinces" class="kpi-value">0</div></div>
+            <div class="card"><div>Đại lý</div><div id="totalCaterers" class="kpi-value">0</div></div>
         </div>
-
         <div class="chart-row">
-            <div class="card"><h3>Top 10 Huyện tiêu biểu</h3><div id="districtBar"></div></div>
-            <div class="card"><h3>Cơ cấu Loại tiệc</h3><div id="typePie"></div></div>
+            <div class="card"><h3>Top 10 Huyện</h3><div id="districtBar"></div></div>
+            <div class="card"><h3>Loại tiệc</h3><div id="typePie"></div></div>
         </div>
-
-        <div class="card" style="margin-bottom: 20px;">
-            <h3>Xu hướng tiệc theo ngày</h3>
-            <div id="trendLine"></div>
-        </div>
-
-        <div class="card">
-            <h3>Chi tiết đơn hàng (50 đơn gần nhất)</h3>
-            <div id="tableContainer"></div>
-        </div>
+        <div class="card" style="margin-bottom: 20px;"><h3>Xu hướng theo ngày</h3><div id="trendLine"></div></div>
+        <div class="card"><h3>Danh sách chi tiết</h3><div id="tableContainer"></div></div>
     </div>
 
     <div id="regionContent" style="display:none;">
-        <div id="regionContainer" class="grid" style="grid-template-columns: repeat(2, 1fr);"></div>
+        <div id="regionContainer" class="grid" style="grid-template-columns: 1fr 1fr;"></div>
     </div>
 </div>
 
 <script>
     let rawData = [];
-    let filteredData = [];
+    const config = { responsive: true, displayModeBar: false };
 
-    // TỰ ĐỘNG TẢI FILE KHI TRANG WEB VỪA MỞ
-    window.addEventListener('DOMContentLoaded', () => {
-        const defaultFile = 'data.csv'; 
+    // Tự động load file data.csv từ GitHub
+    window.onload = () => {
         showLoading(true);
-        
-        Papa.parse(defaultFile, {
+        Papa.parse('data.csv', {
             download: true,
             header: true,
             dynamicTyping: true,
             skipEmptyLines: true,
             complete: function(results) {
-                if(results.data && results.data.length > 1) {
-                    initDashboard(results.data);
-                } else {
-                    console.log("File data.csv trống hoặc không tồn tại.");
-                }
+                if(results.data.length > 0) processData(results.data);
                 showLoading(false);
             },
-            error: function() {
-                console.log("Chưa có file data.csv tự động.");
+            error: function() { 
                 showLoading(false);
+                console.log("Không tìm thấy file data.csv tự động.");
             }
         });
-    });
+    };
 
-    // UPLOAD THỦ CÔNG
-    document.getElementById('csvFile').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
+    // Upload thủ công
+    document.getElementById('csvFile').onchange = function(e) {
         showLoading(true);
-        Papa.parse(file, {
+        Papa.parse(e.target.files[0], {
             header: true,
             dynamicTyping: true,
             skipEmptyLines: true,
             complete: function(results) {
-                initDashboard(results.data);
+                processData(results.data);
                 showLoading(false);
             }
         });
-    });
+    };
 
-    function initDashboard(data) {
-        rawData = data.filter(d => d['Province']); // Lọc bỏ dòng trống
-        updateProvinceFilter();
-        updateDisplay();
-    }
-
-    function updateProvinceFilter() {
-        const provinces = [...new Set(rawData.map(item => item['Province']))].sort();
+    function processData(data) {
+        rawData = data.filter(d => d['Province']); // Lọc bỏ dòng lỗi
+        
+        // Cập nhật bộ lọc
+        const provinces = [...new Set(rawData.map(d => d['Province']))].sort();
         const select = document.getElementById('provinceFilter');
         select.innerHTML = '<option value="All">Tất cả Tỉnh thành</option>';
-        provinces.forEach(p => {
-            if(p) select.innerHTML += `<option value="${p}">${p}</option>`;
-        });
-    }
-
-    document.getElementById('provinceFilter').addEventListener('change', updateDisplay);
-
-    function updateDisplay() {
-        if (rawData.length === 0) return;
+        provinces.forEach(p => select.innerHTML += `<option value="${p}">${p}</option>`);
         
-        const province = document.getElementById('provinceFilter').value;
-        filteredData = province === 'All' ? rawData : rawData.filter(d => d['Province'] === province);
-        
-        renderKPIs();
-        renderCharts();
-        renderTable();
-        renderRegionTab();
+        updateDashboard();
     }
 
-    function renderKPIs() {
-        document.getElementById('totalOrders').innerText = filteredData.length;
-        document.getElementById('urgentOrders').innerText = filteredData.filter(d => d['Urgent Order'] === 'Yes').length;
-        document.getElementById('totalProvinces').innerText = [...new Set(filteredData.map(d => d['Province']))].length;
-        document.getElementById('totalCaterers').innerText = [...new Set(filteredData.map(d => d['Caterer Name']))].length;
-    }
+    document.getElementById('provinceFilter').onchange = updateDashboard;
 
-    function renderCharts() {
-        // District Bar
-        const distMap = {};
-        filteredData.forEach(d => { if(d.District) distMap[d.District] = (distMap[d.District] || 0) + 1 });
-        const topDist = Object.entries(distMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
-        Plotly.newPlot('districtBar', [{
-            x: topDist.map(i=>i[0]), y: topDist.map(i=>i[1]), type: 'bar', marker:{color:'#008200'}
-        }], { height: 350, margin:{t:10, b:40} });
+    function updateDashboard() {
+        const p = document.getElementById('provinceFilter').value;
+        const filtered = p === 'All' ? rawData : rawData.filter(d => d['Province'] === p);
 
-        // Type Pie
-        const typeMap = {};
-        filteredData.forEach(d => { if(d['Banquet Type']) typeMap[d['Banquet Type']] = (typeMap[d['Banquet Type']] || 0) + 1 });
-        Plotly.newPlot('typePie', [{
-            labels: Object.keys(typeMap), values: Object.values(typeMap), type: 'pie', hole: 0.4,
-            marker: {colors: ['#008200', '#2ecc71', '#27ae60', '#a2de96']}
-        }], { height: 350, margin:{t:10} });
+        // KPI
+        document.getElementById('totalOrders').innerText = filtered.length;
+        document.getElementById('urgentOrders').innerText = filtered.filter(d => d['Urgent Order'] === 'Yes').length;
+        document.getElementById('totalProvinces').innerText = [...new Set(filtered.map(d => d['Province']))].length;
+        document.getElementById('totalCaterers').innerText = [...new Set(filtered.map(d => d['Caterer Name']))].length;
 
-        // Trend Line
-        const trendMap = {};
-        filteredData.forEach(d => { if(d['Order Date']) trendMap[d['Order Date']] = (trendMap[d['Order Date']] || 0) + 1 });
-        const sortedDates = Object.keys(trendMap).sort((a,b) => {
-            const [d1,m1,y1] = a.split('/'); const [d2,m2,y2] = b.split('/');
-            return new Date(y1,m1-1,d1) - new Date(y2,m2-1,d2);
+        // Bar Chart
+        const dMap = {}; filtered.forEach(d => dMap[d.District] = (dMap[d.District] || 0) + 1);
+        const topD = Object.entries(dMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
+        Plotly.newPlot('districtBar', [{x: topD.map(i=>i[0]), y: topD.map(i=>i[1]), type:'bar', marker:{color:'#008200'}}], {height:350, margin:{t:10}}, config);
+
+        // Pie Chart
+        const tMap = {}; filtered.forEach(d => tMap[d['Banquet Type']] = (tMap[d['Banquet Type']] || 0) + 1);
+        Plotly.newPlot('typePie', [{labels: Object.keys(tMap), values: Object.values(tMap), type:'pie', hole:0.4}], {height:350, margin:{t:10}}, config);
+
+        // Line Chart
+        const trend = {}; filtered.forEach(d => trend[d['Order Date']] = (trend[d['Order Date']] || 0) + 1);
+        const dates = Object.keys(trend).sort((a,b)=> new Date(a.split('/').reverse().join('-')) - new Date(b.split('/').reverse().join('-')));
+        Plotly.newPlot('trendLine', [{x: dates, y: dates.map(d=>trend[d]), mode:'lines+markers', line:{color:'#008200'}}], {height:300, margin:{t:10}}, config);
+
+        // Table
+        let tableHtml = `<table><tr><th>Ngày</th><th>Tỉnh</th><th>Đại lý</th><th>Loại tiệc</th></tr>`;
+        filtered.slice(0, 20).forEach(d => {
+            tableHtml += `<tr><td>${d['Order Date']}</td><td>${d['Province']}</td><td>${d['Caterer Name']}</td><td>${d['Banquet Type']}</td></tr>`;
         });
-        Plotly.newPlot('trendLine', [{
-            x: sortedDates, y: sortedDates.map(d=>trendMap[d]), mode:'lines+markers', line:{color: '#008200', width:3}
-        }], { height: 300, margin: {t:10} });
+        document.getElementById('tableContainer').innerHTML = tableHtml + `</table>`;
+        
+        renderRegion(filtered);
     }
 
-    function renderRegionTab() {
+    function renderRegion(data) {
         const container = document.getElementById('regionContainer');
         container.innerHTML = "";
-        const rMap = {};
-        filteredData.forEach(row => {
-            const reg = row['Region'], cat = row['Caterer Name'];
-            if(reg && cat) {
-                if(!rMap[reg]) rMap[reg] = {};
-                rMap[reg][cat] = (rMap[reg][cat] || 0) + 1;
-            }
-        });
-
-        Object.keys(rMap).forEach(reg => {
-            const sorted = Object.entries(rMap[reg]).sort((a,b)=>b[1]-a[1]).slice(0, 10);
-            const card = document.createElement('div');
-            card.className = "card";
-            const id = "reg_" + reg.replace(/\s+/g, '');
-            card.innerHTML = `<h3>Vùng: ${reg} (Top 10 Đại lý)</h3><div id="${id}"></div>`;
-            container.appendChild(card);
-            Plotly.newPlot(id, [{
-                y: sorted.map(i=>i[0]), x: sorted.map(i=>i[1]), type:'bar', orientation:'h', marker:{color:'#27ae60'}
-            }], { height: 300, margin:{t:5, l:150} });
+        const regions = [...new Set(data.map(d => d.Region))].filter(Boolean);
+        regions.forEach(r => {
+            const div = document.createElement('div');
+            div.className = "card";
+            const id = "chart_" + Math.random().toString(36).substr(2, 9);
+            div.innerHTML = `<h3>Vùng ${r}</h3><div id="${id}"></div>`;
+            container.appendChild(div);
+            const cMap = {};
+            data.filter(d => d.Region === r).forEach(d => cMap[d['Caterer Name']] = (cMap[d['Caterer Name']] || 0) + 1);
+            const sorted = Object.entries(cMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
+            Plotly.newPlot(id, [{y: sorted.map(i=>i[0]), x: sorted.map(i=>i[1]), type:'bar', orientation:'h', marker:{color:'#27ae60'}}], {height:250, margin:{t:10, l:120}}, config);
         });
     }
 
-    function renderTable() {
-        let html = `<table><thead><tr><th>Ngày đặt</th><th>Tỉnh</th><th>Huyện</th><th>Loại tiệc</th><th>Đại lý</th><th>Gấp?</th></tr></thead><tbody>`;
-        filteredData.slice(0, 50).forEach(d => {
-            html += `<tr><td>${d['Order Date']||''}</td><td>${d['Province']||''}</td><td>${d['District']||''}</td><td>${d['Banquet Type']||''}</td><td>${d['Caterer Name']||''}</td><td>${d['Urgent Order']||'No'}</td></tr>`;
-        });
-        html += `</tbody></table>`;
-        document.getElementById('tableContainer').innerHTML = html;
+    function switchTab(t) {
+        document.getElementById('overviewContent').style.display = t === 'overview' ? 'block' : 'none';
+        document.getElementById('regionContent').style.display = t === 'region' ? 'block' : 'none';
+        document.getElementById('tab1').className = t === 'overview' ? 'tab active' : 'tab';
+        document.getElementById('tab2').className = t === 'region' ? 'tab active' : 'tab';
+        window.dispatchEvent(new Event('resize'));
     }
 
-    function switchTab(tab) {
-        document.getElementById('tabOverview').classList.toggle('active', tab === 'overview');
-        document.getElementById('tabRegion').classList.toggle('active', tab === 'region');
-        document.getElementById('overviewContent').style.display = tab === 'overview' ? 'block' : 'none';
-        document.getElementById('regionContent').style.display = tab === 'region' ? 'block' : 'none';
-        
-        // Fix lỗi Plotly không render khi tab bị ẩn
-        if(tab === 'region') {
-            setTimeout(renderRegionTab, 100);
-        } else {
-            setTimeout(renderCharts, 100);
-        }
-    }
+    function showLoading(s) { document.getElementById('loading').style.display = s ? 'flex' : 'none'; }
 
-    function showLoading(show) {
-        document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
-    }
-
-    // DOWNLOAD FUNCTION
-    document.getElementById('downloadBtn').addEventListener('click', function() {
-        if(filteredData.length === 0) { alert("Không có dữ liệu để tải!"); return; }
-        const csv = Papa.unparse(filteredData);
+    document.getElementById('downloadBtn').onclick = function() {
+        const csv = Papa.unparse(rawData);
         const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
-        link.download = "dashboard_data.csv";
+        link.download = "data_report.csv";
         link.click();
-    });
+    };
 </script>
-
 </body>
 </html>
