@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional Banquet Dashboard - Auto Load Edition</title>
+    <title>Professional Banquet Dashboard - V8 Final</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
@@ -17,16 +17,16 @@
         
         .btn { padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; border: none; transition: 0.3s; font-size: 14px; text-decoration: none; display: inline-flex; align-items: center; }
         .btn-upload { background: white; color: var(--primary); }
-        .btn-download { background: rgba(255,255,255,0.2); color: white; border: 1px solid white; display: none; }
+        .btn-download { background: #27ae60; color: white; border: 1px solid rgba(255,255,255,0.3); }
         .btn:hover { opacity: 0.9; transform: translateY(-1px); }
 
         .container { max-width: 1200px; margin: 20px auto; padding: 0 20px; }
         .filter-section { background: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         select { padding: 8px; border-radius: 5px; border: 1px solid #ddd; min-width: 200px; }
 
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; }
-        .tab { padding: 10px 20px; cursor: pointer; font-weight: 600; color: #636e72; border-bottom: 3px solid transparent; transition: 0.3s; }
-        .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; background: white; padding: 10px 10px 0; border-radius: 10px 10px 0 0; }
+        .tab { padding: 12px 24px; cursor: pointer; font-weight: 700; color: #636e72; border-bottom: 3px solid transparent; transition: 0.3s; }
+        .tab.active { color: var(--primary); border-bottom-color: var(--primary); background: #f0fff0; }
 
         .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 20px; }
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
@@ -35,7 +35,6 @@
         .kpi-label { font-size: 13px; color: #636e72; text-transform: uppercase; }
 
         .chart-row { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; margin-bottom: 20px; }
-        .full-row { grid-column: span 2; }
         h3 { margin-top: 0; font-size: 16px; border-left: 4px solid var(--primary); padding-left: 10px; margin-bottom: 15px; }
 
         #tableContainer { overflow-x: auto; background: white; border-radius: 12px; }
@@ -67,8 +66,8 @@
     </div>
 
     <div class="tabs">
-        <div class="tab active" onclick="switchTab('overview')">OVERVIEW</div>
-        <div class="tab" onclick="switchTab('region')">REGION ANALYSIS</div>
+        <div id="tabOverview" class="tab active" onclick="switchTab('overview')">📊 OVERVIEW</div>
+        <div id="tabRegion" class="tab" onclick="switchTab('region')">🌍 REGION ANALYSIS</div>
     </div>
 
     <div id="overviewContent">
@@ -84,13 +83,13 @@
             <div class="card"><h3>Cơ cấu Loại tiệc</h3><div id="typePie"></div></div>
         </div>
 
-        <div class="card full-row" style="margin-bottom: 20px;">
+        <div class="card" style="margin-bottom: 20px;">
             <h3>Xu hướng tiệc theo ngày</h3>
             <div id="trendLine"></div>
         </div>
 
         <div class="card">
-            <h3>Chi tiết đơn hàng</h3>
+            <h3>Chi tiết đơn hàng (50 đơn gần nhất)</h3>
             <div id="tableContainer"></div>
         </div>
     </div>
@@ -106,7 +105,7 @@
 
     // TỰ ĐỘNG TẢI FILE KHI TRANG WEB VỪA MỞ
     window.addEventListener('DOMContentLoaded', () => {
-        const defaultFile = 'data.csv'; // Đảm bảo file tên là data.csv nằm cùng repo
+        const defaultFile = 'data.csv'; 
         showLoading(true);
         
         Papa.parse(defaultFile, {
@@ -115,19 +114,21 @@
             dynamicTyping: true,
             skipEmptyLines: true,
             complete: function(results) {
-                if(results.data && results.data.length > 0) {
+                if(results.data && results.data.length > 1) {
                     initDashboard(results.data);
+                } else {
+                    console.log("File data.csv trống hoặc không tồn tại.");
                 }
                 showLoading(false);
             },
             error: function() {
-                console.log("Không tìm thấy file data.csv tự động.");
+                console.log("Chưa có file data.csv tự động.");
                 showLoading(false);
             }
         });
     });
 
-    // XỬ LÝ KHI NGƯỜI DÙNG UPLOAD THỦ CÔNG
+    // UPLOAD THỦ CÔNG
     document.getElementById('csvFile').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -144,21 +145,25 @@
     });
 
     function initDashboard(data) {
-        rawData = data;
-        document.getElementById('downloadBtn').style.display = 'inline-flex';
-        
-        // Cập nhật bộ lọc tỉnh
-        const provinces = [...new Set(rawData.map(item => item['Province']).filter(Boolean))].sort();
+        rawData = data.filter(d => d['Province']); // Lọc bỏ dòng trống
+        updateProvinceFilter();
+        updateDisplay();
+    }
+
+    function updateProvinceFilter() {
+        const provinces = [...new Set(rawData.map(item => item['Province']))].sort();
         const select = document.getElementById('provinceFilter');
         select.innerHTML = '<option value="All">Tất cả Tỉnh thành</option>';
-        provinces.forEach(p => select.innerHTML += `<option value="${p}">${p}</option>`);
-        
-        updateDisplay();
+        provinces.forEach(p => {
+            if(p) select.innerHTML += `<option value="${p}">${p}</option>`;
+        });
     }
 
     document.getElementById('provinceFilter').addEventListener('change', updateDisplay);
 
     function updateDisplay() {
+        if (rawData.length === 0) return;
+        
         const province = document.getElementById('provinceFilter').value;
         filteredData = province === 'All' ? rawData : rawData.filter(d => d['Province'] === province);
         
@@ -176,7 +181,7 @@
     }
 
     function renderCharts() {
-        // District Bar Chart
+        // District Bar
         const distMap = {};
         filteredData.forEach(d => { if(d.District) distMap[d.District] = (distMap[d.District] || 0) + 1 });
         const topDist = Object.entries(distMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
@@ -184,7 +189,7 @@
             x: topDist.map(i=>i[0]), y: topDist.map(i=>i[1]), type: 'bar', marker:{color:'#008200'}
         }], { height: 350, margin:{t:10, b:40} });
 
-        // Type Pie Chart
+        // Type Pie
         const typeMap = {};
         filteredData.forEach(d => { if(d['Banquet Type']) typeMap[d['Banquet Type']] = (typeMap[d['Banquet Type']] || 0) + 1 });
         Plotly.newPlot('typePie', [{
@@ -239,28 +244,32 @@
     }
 
     function switchTab(tab) {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        event.target.classList.add('active');
+        document.getElementById('tabOverview').classList.toggle('active', tab === 'overview');
+        document.getElementById('tabRegion').classList.toggle('active', tab === 'region');
         document.getElementById('overviewContent').style.display = tab === 'overview' ? 'block' : 'none';
         document.getElementById('regionContent').style.display = tab === 'region' ? 'block' : 'none';
+        
+        // Fix lỗi Plotly không render khi tab bị ẩn
+        if(tab === 'region') {
+            setTimeout(renderRegionTab, 100);
+        } else {
+            setTimeout(renderCharts, 100);
+        }
     }
 
     function showLoading(show) {
         document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
     }
 
-    // DOWNLOAD CSV FUNCTION
+    // DOWNLOAD FUNCTION
     document.getElementById('downloadBtn').addEventListener('click', function() {
+        if(filteredData.length === 0) { alert("Không có dữ liệu để tải!"); return; }
         const csv = Papa.unparse(filteredData);
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
-        const url = URL.createObjectURL(blob);
-        link.setAttribute("href", url);
-        link.setAttribute("download", "exported_data.csv");
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
+        link.href = URL.createObjectURL(blob);
+        link.download = "dashboard_data.csv";
         link.click();
-        document.body.removeChild(link);
     });
 </script>
 
