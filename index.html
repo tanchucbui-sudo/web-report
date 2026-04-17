@@ -27,6 +27,10 @@
     .hd-sub{font-size:11px;color:var(--muted)}
     #status-pill{font-size:12px;font-family:'DM Mono',monospace;background:var(--s2);border:1px solid var(--border2);color:var(--muted);padding:4px 14px;border-radius:20px;transition:all .3s}
     #status-pill.ok{color:var(--brandL);border-color:var(--brand)}
+    .hd-right{display:flex;align-items:center;gap:10px}
+    #btn-dl{display:none;align-items:center;gap:6px;background:transparent;border:1px solid var(--border);color:var(--muted);padding:5px 14px;border-radius:20px;font-size:12px;font-family:'DM Mono',monospace;cursor:pointer;transition:all .25s;text-decoration:none;white-space:nowrap}
+    #btn-dl:hover{border-color:var(--brandL);color:var(--brandL);background:var(--brandDim)}
+    #btn-dl svg{flex-shrink:0}
 
     /* UPLOAD */
     #page-upload{min-height:calc(100vh - 60px);display:flex;align-items:center;justify-content:center;padding:40px}
@@ -112,7 +116,15 @@
       <div class="hd-sub">Urgent Party Monitoring · Central Highlands</div>
     </div>
   </div>
-  <div id="status-pill">No data loaded</div>
+  <div class="hd-right">
+    <a id="btn-dl" href="./dataset.csv" download="dataset.csv">
+      <svg width="13" height="13" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Download CSV
+    </a>
+    <div id="status-pill">No data loaded</div>
+  </div>
 </header>
 
 <div id="page-upload" style="display:none">
@@ -273,6 +285,7 @@ function processCSVText(txt, sourceName) {
         const p=document.getElementById('status-pill');
         p.textContent=RAW.length.toLocaleString()+' rows · '+sourceName;
         p.classList.add('ok');
+        const dl=document.getElementById('btn-dl'); if(dl) dl.style.display='flex';
       }));
     },
     error:e=>alert('Parse error: '+e.message)
