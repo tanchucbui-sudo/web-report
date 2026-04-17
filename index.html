@@ -1,208 +1,514 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Banquet Analytics - V10 Final</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-    <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
-    <style>
-        :root { --primary: #008200; --bg: #f4f7f6; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; color: #2d3436; }
-        header { background: var(--primary); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
-        .btn { padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; border: none; font-size: 14px; transition: 0.3s; text-decoration: none; }
-        .btn-upload { background: white; color: var(--primary); }
-        .btn-download { background: #27ae60; color: white; margin-left: 10px; border: 1px solid rgba(255,255,255,0.3); }
-        .container { max-width: 1200px; margin: 20px auto; padding: 0 20px; }
-        .filter-section { background: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; }
-        .tab { padding: 12px 24px; cursor: pointer; font-weight: 700; color: #636e72; }
-        .tab.active { color: var(--primary); border-bottom: 3px solid var(--primary); }
-        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 20px; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .kpi-value { font-size: 26px; font-weight: 700; color: var(--primary); margin-top: 5px; }
-        .chart-row { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; margin-bottom: 20px; }
-        h3 { margin: 0 0 15px 0; font-size: 16px; border-left: 4px solid var(--primary); padding-left: 10px; }
-        #tableContainer { overflow-x: auto; background: white; border-radius: 12px; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
-        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); display: none; justify-content: center; align-items: center; z-index: 9999; }
-    </style>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Party Operations Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --brand:#008200; --brandL:#00a300; --brandDim:rgba(0,130,0,0.10);
+      --accent:#ff6b2b; --accentDim:rgba(255,107,43,0.13);
+      --bg:#0d0f0d; --s1:#141714; --s2:#1b1e1b; --s3:#222522;
+      --border:rgba(0,130,0,0.16); --border2:rgba(255,255,255,0.06);
+      --text:#e6ece6; --muted:#8a9a8a; --faint:#495549;
+      --r:12px; --r2:8px;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5}
+
+    /* HEADER */
+    header{position:sticky;top:0;z-index:200;height:60px;background:rgba(20,23,20,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px}
+    .hd-logo{display:flex;align-items:center;gap:10px}
+    .hd-icon{width:32px;height:32px;border-radius:8px;background:var(--brand);display:flex;align-items:center;justify-content:center;font-size:16px}
+    .hd-title{font-size:15px;font-weight:700;letter-spacing:-.3px}
+    .hd-sub{font-size:11px;color:var(--muted)}
+    #status-pill{font-size:12px;font-family:'DM Mono',monospace;background:var(--s2);border:1px solid var(--border2);color:var(--muted);padding:4px 14px;border-radius:20px;transition:all .3s}
+    #status-pill.ok{color:var(--brandL);border-color:var(--brand)}
+
+    /* UPLOAD */
+    #page-upload{min-height:calc(100vh - 60px);display:flex;align-items:center;justify-content:center;padding:40px}
+    .up-card{max-width:480px;width:100%;background:var(--s1);border:2px dashed rgba(0,130,0,0.3);border-radius:20px;padding:60px 48px;text-align:center;cursor:pointer;transition:all .2s}
+    .up-card:hover,.up-card.drag{border-color:var(--brand);background:var(--brandDim)}
+    .up-icon{font-size:52px;display:block;margin-bottom:20px}
+    .up-card h2{font-size:22px;font-weight:700;margin-bottom:8px}
+    .up-card p{font-size:13px;color:var(--muted);margin-bottom:28px;line-height:1.7}
+    .btn-pick{background:var(--brand);color:#fff;border:none;padding:11px 26px;border-radius:var(--r2);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s}
+    .btn-pick:hover{background:var(--brandL);transform:translateY(-1px)}
+    #file-in{display:none}
+
+    /* DASHBOARD */
+    #page-dash{display:none;padding:22px 28px 52px}
+
+    /* FILTERS */
+    .filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:20px}
+    .f-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.9px}
+    select.fsel{background:var(--s2);border:1px solid var(--border2);color:var(--text);padding:7px 30px 7px 12px;border-radius:var(--r2);font-size:13px;font-family:inherit;cursor:pointer;outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%238a9a8a' d='M5 7L0 2h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;transition:border-color .2s}
+    select.fsel:focus{border-color:var(--brand)}
+    .btn-reset{background:transparent;border:1px solid var(--border2);color:var(--muted);padding:7px 14px;border-radius:var(--r2);font-size:13px;cursor:pointer;font-family:inherit;transition:all .2s}
+    .btn-reset:hover{border-color:var(--accent);color:var(--accent)}
+
+    /* KPI */
+    .kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+    .kpi{background:var(--s1);border:1px solid var(--border2);border-radius:var(--r);padding:16px 18px;position:relative;overflow:hidden}
+    .kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--brand);opacity:.5}
+    .kpi.hot::after{background:var(--accent);opacity:1}
+    .kpi-lbl{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.9px;margin-bottom:8px}
+    .kpi-val{font-size:28px;font-weight:800;color:var(--text);letter-spacing:-1px;line-height:1;margin-bottom:4px}
+    .kpi.hot .kpi-val{color:var(--accent)}
+    .kpi-sub{font-size:11px;color:var(--faint);font-family:'DM Mono',monospace}
+
+    /* GRID */
+    .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+
+    /* CARD */
+    .card{background:var(--s1);border:1px solid var(--border2);border-radius:var(--r);padding:18px 20px;margin-bottom:14px}
+    .card-last{margin-bottom:0}
+    .card-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px}
+    .card-desc{font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.6}
+
+    /* CHART WRAPPERS */
+    .cw{position:relative;width:100%}
+    .cw-340{height:340px}
+    .cw-300{height:300px}
+    .cw-caterer{height:700px}
+
+    /* TABLE */
+    .tbl-wrap{overflow-x:auto;overflow-y:auto;max-height:530px}
+    table{width:100%;border-collapse:collapse;font-size:12px}
+    thead{position:sticky;top:0;z-index:1}
+    thead tr{background:var(--s2);border-bottom:1px solid var(--border)}
+    th{padding:10px 13px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;white-space:nowrap}
+    th[data-s]{cursor:pointer;user-select:none}
+    th[data-s]:hover{color:var(--brandL)}
+    th.asc::after{content:' ↑';color:var(--brand)}
+    th.desc::after{content:' ↓';color:var(--brand)}
+    tbody tr{border-bottom:1px solid var(--border2);transition:background .12s}
+    tbody tr:hover{background:var(--s2)}
+    td{padding:9px 13px;color:var(--text)}
+    td.nm{font-size:13px}
+    td.mono{font-family:'DM Mono',monospace;font-size:12px}
+    .badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;font-family:'DM Mono',monospace}
+    .b-hot{background:var(--accentDim);color:var(--accent)}
+    .b-ok{background:var(--brandDim);color:var(--brandL)}
+    .mini{display:flex;align-items:center;gap:7px}
+    .mini-track{flex:1;height:4px;background:var(--s3);border-radius:2px;overflow:hidden}
+    .mini-fill{height:100%;border-radius:2px;background:var(--brand)}
+    .mini-fill.hot{background:var(--accent)}
+
+    @media(max-width:1100px){.kpi-row{grid-template-columns:repeat(3,1fr)}.g2{grid-template-columns:1fr}}
+    @media(max-width:640px){#page-dash{padding:14px}.kpi-row{grid-template-columns:repeat(2,1fr)}}
+  </style>
 </head>
 <body>
 
-<div id="loading">Đang tải dữ liệu...</div>
-
 <header>
-    <div style="font-size: 20px; font-weight: 700;">BANQUET ANALYTICS</div>
+  <div class="hd-logo">
+    <div class="hd-icon">🍺</div>
     <div>
-        <label class="btn btn-upload">📤 TẢI CSV MỚI <input type="file" id="csvFile" accept=".csv" hidden></label>
-        <button id="downloadBtn" class="btn btn-download">📥 XUẤT CSV</button>
+      <div class="hd-title">Party Operations Dashboard</div>
+      <div class="hd-sub">Urgent Party Monitoring · Central Highlands</div>
     </div>
+  </div>
+  <div id="status-pill">No data loaded</div>
 </header>
 
-<div class="container">
-    <div class="filter-section">
-        <strong>Lọc Tỉnh:</strong>
-        <select id="provinceFilter"><option value="All">Đang chờ dữ liệu...</option></select>
-    </div>
+<div id="page-upload" style="display:none">
+  <div class="up-card" id="drop-zone">
+    <span class="up-icon">📂</span>
+    <h2>Load your CSV data</h2>
+    <p>Dashboard is loading data automatically.<br/>If it fails, you can manually upload <strong>dataset.csv</strong> below.</p>
+    <button class="btn-pick" onclick="document.getElementById('file-in').click()">Choose CSV File</button>
+    <input type="file" id="file-in" accept=".csv"/>
+  </div>
+</div>
 
-    <div class="tabs">
-        <div id="tab1" class="tab active" onclick="switchTab('overview')">📊 TỔNG QUAN</div>
-        <div id="tab2" class="tab" onclick="switchTab('region')">🌍 THEO VÙNG</div>
-    </div>
+<div id="page-loading" style="min-height:calc(100vh - 60px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px">
+  <div style="width:40px;height:40px;border:3px solid rgba(0,130,0,0.2);border-top-color:#008200;border-radius:50%;animation:spin 0.8s linear infinite"></div>
+  <div style="font-size:14px;color:#8a9a8a">Loading dashboard data...</div>
+</div>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+<div id="page-dash">
+  <div class="filters">
+    <span class="f-label">Filter</span>
+    <select class="fsel" id="f-tinh"><option value="">All Provinces</option></select>
+    <select class="fsel" id="f-huyen"><option value="">All Districts</option></select>
+    <select class="fsel" id="f-loai"><option value="">All Party Types</option></select>
+    <select class="fsel" id="f-urg">
+      <option value="">All Urgency</option>
+      <option value="u48">Urgent &lt;48h</option>
+      <option value="u4">Urgent &lt;4h</option>
+      <option value="normal">Normal only</option>
+    </select>
+    <button class="btn-reset" onclick="resetAll()">↺ Reset</button>
+  </div>
 
-    <div id="overviewContent">
-        <div class="grid">
-            <div class="card"><div>Tổng đơn tiệc</div><div id="totalOrders" class="kpi-value">0</div></div>
-            <div class="card"><div>Tiệc Gấp (<48h)</div><div id="urgentOrders" class="kpi-value">0</div></div>
-            <div class="card"><div>Số Tỉnh thành</div><div id="totalProvinces" class="kpi-value">0</div></div>
-            <div class="card"><div>Số Đại lý</div><div id="totalCaterers" class="kpi-value">0</div></div>
-        </div>
-        <div class="chart-row">
-            <div class="card"><h3>Top 10 Huyện</h3><div id="districtBar"></div></div>
-            <div class="card"><h3>Cơ cấu Loại tiệc</h3><div id="typePie"></div></div>
-        </div>
-        <div class="card" style="margin-bottom: 20px;"><h3>Xu hướng đặt tiệc</h3><div id="trendLine"></div></div>
-        <div class="card"><h3>Bảng chi tiết (20 đơn mới nhất)</h3><div id="tableContainer"></div></div>
-    </div>
+  <div class="kpi-row">
+    <div class="kpi"><div class="kpi-lbl">Total Parties</div><div class="kpi-val" id="k-total">—</div><div class="kpi-sub">orders</div></div>
+    <div class="kpi"><div class="kpi-lbl">Urgent &lt;48h</div><div class="kpi-val" id="k-48">—</div><div class="kpi-sub" id="k-48p">—</div></div>
+    <div class="kpi hot"><div class="kpi-lbl">Urgent &lt;4h</div><div class="kpi-val" id="k-4">—</div><div class="kpi-sub" id="k-4p">—</div></div>
+    <div class="kpi"><div class="kpi-lbl">Tables Ordered</div><div class="kpi-val" id="k-tbl">—</div><div class="kpi-sub">sum Số bàn đặt</div></div>
+    <div class="kpi"><div class="kpi-lbl">Active Caterers</div><div class="kpi-val" id="k-cat">—</div><div class="kpi-sub">unique agents</div></div>
+  </div>
 
-    <div id="regionContent" style="display:none;">
-        <div id="regionContainer" class="grid" style="grid-template-columns: 1fr 1fr;"></div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">Party Volume by District &amp; Type</div>
+      <div class="card-desc">Each bar = one district, stacked by party type. Tallest bars = highest-activity zones.</div>
+      <div class="cw cw-340"><canvas id="c-stacked"></canvas></div>
     </div>
+    <div class="card">
+      <div class="card-title">Urgent Party Risk by District</div>
+      <div class="card-desc">Bars = urgent (&lt;48h) count. Orange line = urgency rate %. High line + short bar = disproportionate risk.</div>
+      <div class="cw cw-340"><canvas id="c-combo"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Party Trend Over Time</div>
+    <div class="card-desc">Daily party count by event date. Green = all parties; orange dashed = urgent &lt;48h. Spikes in orange = high-pressure days.</div>
+    <div class="cw cw-300"><canvas id="c-line"></canvas></div>
+  </div>
+
+  <div class="g2">
+    <div class="card card-last">
+      <div class="card-title">Top 30 Caterers by Party Count</div>
+      <div class="card-desc">Green = normal; orange = urgent (&lt;48h). Longest bar = highest-volume agent.</div>
+      <div class="cw cw-caterer"><canvas id="c-catbar"></canvas></div>
+    </div>
+    <div class="card card-last">
+      <div class="card-title">Caterer Performance Table</div>
+      <div class="card-desc">Click headers to sort. Red badge = urgency rate &gt;30%.</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Caterer</th>
+            <th data-s="tot">Parties</th>
+            <th data-s="urg">Urgent &lt;48h</th>
+            <th data-s="rate">Urgency %</th>
+            <th data-s="tbl">Tables</th>
+          </tr></thead>
+          <tbody id="t-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
-    let rawData = [];
+// ── GLOBALS ───────────────────────────────────────────────────────────────────
+let RAW=[], DATA=[];
+let sortCol='rate', sortDir='desc';
+const charts={};
 
-    // HÀM KHỞI CHẠY CHÍNH
-    window.onload = function() {
-        // Thử tải file data.csv tự động
-        Papa.parse('data.csv', {
-            download: true,
-            header: true,
-            dynamicTyping: true,
-            skipEmptyLines: true,
-            complete: function(results) {
-                if(results.data && results.data.length > 0) {
-                    processData(results.data);
-                }
-            },
-            error: function() { console.warn("Lưu ý: Không tìm thấy file data.csv để tự động load."); }
-        });
+const C={
+  brand:'#008200', brandL:'#00a300', brandDim:'rgba(0,130,0,0.15)',
+  accent:'#ff6b2b', accentDim:'rgba(255,107,43,0.15)',
+  text:'#e6ece6', muted:'#8a9a8a', grid:'rgba(255,255,255,0.06)',
+  s2:'#1b1e1b'
+};
+
+// Chart.js global defaults
+Chart.defaults.color = C.text;
+Chart.defaults.font.family = 'DM Sans, sans-serif';
+Chart.defaults.font.size = 11;
+Chart.defaults.plugins.legend.labels.color = C.text;
+Chart.defaults.plugins.tooltip.backgroundColor = '#222522';
+Chart.defaults.plugins.tooltip.borderColor = C.brand;
+Chart.defaults.plugins.tooltip.borderWidth = 1;
+Chart.defaults.plugins.tooltip.titleColor = C.text;
+Chart.defaults.plugins.tooltip.bodyColor = C.muted;
+Chart.defaults.plugins.tooltip.padding = 10;
+
+// ── AUTO-FETCH CSV ON LOAD ───────────────────────────────────────────────────
+async function autoFetchCSV() {
+  const csvUrl = './dataset.csv';
+  try {
+    const res = await fetch(csvUrl + '?t=' + Date.now());
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const txt = await res.text();
+    processCSVText(txt, 'dataset.csv (auto-loaded)');
+    return true;
+  } catch(e) {
+    console.warn('Auto-fetch failed:', e.message);
+    return false;
+  }
+}
+
+window.addEventListener('DOMContentLoaded', async () => {
+  const ok = await autoFetchCSV();
+  if (!ok) {
+    // Show upload UI as fallback
+    document.getElementById('page-upload').style.display = 'flex';
+  }
+});
+
+// ── MANUAL UPLOAD (fallback) ─────────────────────────────────────────────────
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover', e=>{e.preventDefault();dz.classList.add('drag')});
+dz.addEventListener('dragleave', ()=>dz.classList.remove('drag'));
+dz.addEventListener('drop', e=>{e.preventDefault();dz.classList.remove('drag');loadFile(e.dataTransfer.files[0])});
+document.getElementById('file-in').addEventListener('change', e=>{if(e.target.files[0])loadFile(e.target.files[0])});
+
+function processCSVText(txt, sourceName) {
+  if(txt.charCodeAt(0)===0xFEFF) txt=txt.slice(1);
+  Papa.parse(txt,{
+    header:true, skipEmptyLines:true,
+    transformHeader:h=>h.replace(/^\uFEFF/,'').replace(/\u200B/g,'').trim(),
+    complete:res=>{
+      if(!res.data.length){alert('File is empty.');return}
+      const cols=Object.keys(res.data[0]);
+      const need=['Huyện','Loại tiệc','Tiệc gấp<48h','Tiệc gấp<4h','Ngày diễn ra tiệc','Số bàn đặt','Caterer Name'];
+      const miss=need.filter(c=>!cols.includes(c));
+      if(miss.length){alert('⚠️ Missing columns:\n'+miss.join('\n')+'\n\nFound:\n'+cols.join(', '));return}
+      RAW=res.data; DATA=[...RAW];
+      initFilters();
+      document.getElementById('page-upload').style.display='none';
+      document.getElementById('page-loading').style.display='none';
+      document.getElementById('page-dash').style.display='block';
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        renderAll();
+        const p=document.getElementById('status-pill');
+        p.textContent=RAW.length.toLocaleString()+' rows · '+sourceName;
+        p.classList.add('ok');
+      }));
+    },
+    error:e=>alert('Parse error: '+e.message)
+  });
+}
+
+function loadFile(file){
+  const reader=new FileReader();
+  reader.onload=ev=>processCSVText(ev.target.result, file.name);
+  reader.readAsText(file,'UTF-8');
+}
+
+// ── FILTERS ───────────────────────────────────────────────────────────────────
+function uniq(col){return[...new Set(RAW.map(r=>r[col]).filter(Boolean))].sort()}
+function fillSel(id,vals){
+  const el=document.getElementById(id);
+  const first=el.options[0].outerHTML;
+  el.innerHTML=first+vals.map(v=>`<option value="${escH(v)}">${escH(v)}</option>`).join('');
+}
+function escH(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function initFilters(){
+  fillSel('f-tinh',uniq('Tỉnh'));
+  fillSel('f-huyen',uniq('Huyện'));
+  fillSel('f-loai',uniq('Loại tiệc'));
+  ['f-tinh','f-huyen','f-loai','f-urg'].forEach(id=>
+    document.getElementById(id).addEventListener('change',applyFilters)
+  );
+}
+function applyFilters(){
+  const tinh=document.getElementById('f-tinh').value;
+  const huyen=document.getElementById('f-huyen').value;
+  const loai=document.getElementById('f-loai').value;
+  const urg=document.getElementById('f-urg').value;
+  DATA=RAW.filter(r=>{
+    if(tinh  && r['Tỉnh']!==tinh)  return false;
+    if(huyen && r['Huyện']!==huyen) return false;
+    if(loai  && r['Loại tiệc']!==loai) return false;
+    if(urg==='u48'   && r['Tiệc gấp<48h']!=='x') return false;
+    if(urg==='u4'    && r['Tiệc gấp<4h']!=='x')  return false;
+    if(urg==='normal'&& (r['Tiệc gấp<48h']==='x'||r['Tiệc gấp<4h']==='x')) return false;
+    return true;
+  });
+  if(tinh) fillSel('f-huyen',[...new Set(RAW.filter(r=>r['Tỉnh']===tinh).map(r=>r['Huyện']).filter(Boolean))].sort());
+  renderAll();
+}
+function resetAll(){
+  ['f-tinh','f-huyen','f-loai','f-urg'].forEach(id=>document.getElementById(id).selectedIndex=0);
+  fillSel('f-huyen',uniq('Huyện'));
+  DATA=[...RAW]; renderAll();
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function groupBy(data,key){
+  return data.reduce((a,r)=>{const k=r[key]||'(Unknown)';(a[k]=a[k]||[]).push(r);return a},{});
+}
+function set(id,v){document.getElementById(id).textContent=v}
+function pct(n,t){return t?(n/t*100).toFixed(1)+'%':'0%'}
+
+// Destroy + recreate chart helper
+function mkChart(id,type,data,options){
+  if(charts[id]) charts[id].destroy();
+  const ctx=document.getElementById(id).getContext('2d');
+  charts[id]=new Chart(ctx,{type,data,options});
+  return charts[id];
+}
+
+const gridOpts={color:C.grid,drawBorder:false};
+const tickOpts={color:C.muted,maxRotation:40};
+
+// ── RENDER ALL ────────────────────────────────────────────────────────────────
+function renderAll(){
+  renderKPIs();
+  renderStacked();
+  renderCombo();
+  renderLine();
+  renderCatBar();
+  renderCatTable();
+}
+
+// ── KPIs ──────────────────────────────────────────────────────────────────────
+function renderKPIs(){
+  const n=DATA.length;
+  const u48=DATA.filter(r=>r['Tiệc gấp<48h']==='x').length;
+  const u4=DATA.filter(r=>r['Tiệc gấp<4h']==='x').length;
+  const tbl=DATA.reduce((s,r)=>s+(+r['Số bàn đặt']||0),0);
+  const cat=new Set(DATA.map(r=>r['Caterer Name']).filter(Boolean)).size;
+  set('k-total',n.toLocaleString());
+  set('k-48',u48.toLocaleString()); set('k-48p',pct(u48,n)+' of total');
+  set('k-4',u4.toLocaleString());   set('k-4p',pct(u4,n)+' of total');
+  set('k-tbl',tbl.toLocaleString());
+  set('k-cat',cat.toLocaleString());
+}
+
+// ── CHART 1: STACKED BAR ──────────────────────────────────────────────────────
+function renderStacked(){
+  const grp=groupBy(DATA,'Huyện');
+  const types=[...new Set(DATA.map(r=>r['Loại tiệc']).filter(Boolean))].sort();
+  const labels=Object.keys(grp).sort((a,b)=>grp[b].length-grp[a].length);
+  const clrs=[C.brand,'#3cb86a','#80d9a0','#b0eaca'];
+  const datasets=types.map((t,i)=>({
+    label:t,
+    data:labels.map(h=>grp[h].filter(r=>r['Loại tiệc']===t).length),
+    backgroundColor:clrs[i%clrs.length],
+    borderWidth:0
+  }));
+  mkChart('c-stacked','bar',{labels,datasets},{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{padding:14,boxWidth:12}},tooltip:{mode:'index',intersect:false}},
+    scales:{
+      x:{stacked:true,grid:gridOpts,ticks:{...tickOpts,font:{size:9}}},
+      y:{stacked:true,grid:gridOpts,ticks:{...tickOpts}}
+    }
+  });
+}
+
+// ── CHART 2: COMBO ────────────────────────────────────────────────────────────
+function renderCombo(){
+  const grp=groupBy(DATA,'Huyện');
+  const labels=Object.keys(grp).sort((a,b)=>
+    grp[b].filter(r=>r['Tiệc gấp<48h']==='x').length-
+    grp[a].filter(r=>r['Tiệc gấp<48h']==='x').length
+  );
+  const uc=labels.map(h=>grp[h].filter(r=>r['Tiệc gấp<48h']==='x').length);
+  const ur=labels.map((h,i)=>grp[h].length?+(uc[i]/grp[h].length*100).toFixed(1):0);
+  mkChart('c-combo','bar',{
+    labels,
+    datasets:[
+      {label:'Urgent <48h count',data:uc,backgroundColor:C.brand,borderWidth:0,yAxisID:'y'},
+      {label:'Urgency rate %',data:ur,type:'line',borderColor:C.accent,backgroundColor:'transparent',
+       borderWidth:2.5,pointBackgroundColor:C.accent,pointRadius:4,yAxisID:'y2',tension:.3}
+    ]
+  },{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{padding:14,boxWidth:12}},tooltip:{mode:'index',intersect:false}},
+    scales:{
+      x:{grid:gridOpts,ticks:{...tickOpts,font:{size:9}}},
+      y:{grid:gridOpts,ticks:{...tickOpts},position:'left'},
+      y2:{grid:{display:false},ticks:{...tickOpts,color:C.accent,callback:v=>v+'%'},position:'right'}
+    }
+  });
+}
+
+// ── CHART 3: LINE ─────────────────────────────────────────────────────────────
+function renderLine(){
+  const toISO=s=>{if(!s)return null;const p=s.split('/');return p.length===3?`${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`:null};
+  const all={},urg={};
+  DATA.forEach(r=>{
+    const d=toISO(r['Ngày diễn ra tiệc']);if(!d)return;
+    all[d]=(all[d]||0)+1;
+    if(r['Tiệc gấp<48h']==='x') urg[d]=(urg[d]||0)+1;
+  });
+  const labels=Object.keys(all).sort();
+  mkChart('c-line','line',{
+    labels,
+    datasets:[
+      {label:'All Parties',data:labels.map(d=>all[d]),borderColor:C.brand,backgroundColor:'rgba(0,130,0,0.08)',
+       fill:true,borderWidth:2,pointRadius:2,tension:.3},
+      {label:'Urgent <48h',data:labels.map(d=>urg[d]||0),borderColor:C.accent,backgroundColor:'transparent',
+       borderWidth:2,borderDash:[6,4],pointRadius:2,tension:.3}
+    ]
+  },{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{padding:14,boxWidth:12}},tooltip:{mode:'index',intersect:false}},
+    scales:{
+      x:{grid:gridOpts,ticks:{...tickOpts,maxTicksLimit:14}},
+      y:{grid:gridOpts,ticks:{...tickOpts},beginAtZero:true}
+    }
+  });
+}
+
+// ── CHART 4: CATERER HORIZONTAL BAR ──────────────────────────────────────────
+function renderCatBar(){
+  const grp=groupBy(DATA,'Caterer Name');
+  const sorted=Object.entries(grp)
+    .map(([n,rows])=>({n,tot:rows.length,urg:rows.filter(r=>r['Tiệc gấp<48h']==='x').length}))
+    .sort((a,b)=>b.tot-a.tot).slice(0,30);
+  const labels=sorted.map(c=>c.n);
+  const h=Math.max(700,sorted.length*26);
+  document.getElementById('c-catbar').parentElement.style.height=h+'px';
+  mkChart('c-catbar','bar',{
+    labels,
+    datasets:[
+      {label:'Normal',data:sorted.map(c=>c.tot-c.urg),backgroundColor:C.brand,borderWidth:0},
+      {label:'Urgent <48h',data:sorted.map(c=>c.urg),backgroundColor:C.accent,borderWidth:0}
+    ]
+  },{
+    responsive:true, maintainAspectRatio:false,
+    indexAxis:'y',
+    plugins:{legend:{position:'bottom',labels:{padding:14,boxWidth:12}},tooltip:{mode:'index',intersect:false}},
+    scales:{
+      x:{stacked:true,grid:gridOpts,ticks:{...tickOpts}},
+      y:{stacked:true,grid:{display:false},ticks:{color:C.text,font:{size:10}}}
+    }
+  });
+}
+
+// ── TABLE ─────────────────────────────────────────────────────────────────────
+function renderCatTable(){
+  const grp=groupBy(DATA,'Caterer Name');
+  let rows=Object.entries(grp).map(([name,rs])=>{
+    const tot=rs.length,urg=rs.filter(r=>r['Tiệc gấp<48h']==='x').length;
+    const rate=tot?(urg/tot*100):0;
+    const tbl=rs.reduce((s,r)=>s+(+r['Số bàn đặt']||0),0);
+    return{name,tot,urg,rate,tbl};
+  });
+  rows.sort((a,b)=>{
+    const d=sortDir==='asc'?1:-1;
+    return(a[sortCol]>b[sortCol]?1:a[sortCol]<b[sortCol]?-1:0)*d;
+  });
+  const mx={tot:Math.max(...rows.map(r=>r.tot)),tbl:Math.max(...rows.map(r=>r.tbl))};
+  document.getElementById('t-body').innerHTML=rows.map(r=>`
+    <tr>
+      <td class="nm">${escH(r.name)}</td>
+      <td class="mono">
+        <div class="mini"><span>${r.tot}</span>
+          <div class="mini-track"><div class="mini-fill" style="width:${(r.tot/mx.tot*100).toFixed(0)}%"></div></div>
+        </div>
+      </td>
+      <td class="mono">${r.urg}</td>
+      <td><span class="badge ${r.rate>30?'b-hot':'b-ok'}">${r.rate.toFixed(1)}%</span></td>
+      <td class="mono">
+        <div class="mini"><span>${r.tbl.toLocaleString()}</span>
+          <div class="mini-track"><div class="mini-fill${r.rate>30?' hot':''}" style="width:${(r.tbl/mx.tbl*100).toFixed(0)}%"></div></div>
+        </div>
+      </td>
+    </tr>`).join('');
+  document.querySelectorAll('th[data-s]').forEach(th=>{
+    th.className='';
+    if(th.dataset.s===sortCol)th.classList.add(sortDir);
+    th.onclick=()=>{
+      if(sortCol===th.dataset.s)sortDir=sortDir==='asc'?'desc':'asc';
+      else{sortCol=th.dataset.s;sortDir='desc';}
+      renderCatTable();
     };
-
-    // XỬ LÝ KHI NGƯỜI DÙNG UPLOAD FILE
-    document.getElementById('csvFile').onchange = function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        showLoading(true);
-        Papa.parse(file, {
-            header: true,
-            dynamicTyping: true,
-            skipEmptyLines: true,
-            complete: function(results) {
-                processData(results.data);
-                showLoading(false);
-            }
-        });
-    };
-
-    function processData(data) {
-        // Lọc dữ liệu hợp lệ (phải có cột Province)
-        rawData = data.filter(d => d['Province'] && d['Province'] !== "");
-        
-        if (rawData.length === 0) {
-            alert("File CSV không đúng định dạng hoặc không có dữ liệu!");
-            return;
-        }
-
-        // Cập nhật Dropdown lọc tỉnh
-        const provinces = [...new Set(rawData.map(d => d['Province']))].sort();
-        const select = document.getElementById('provinceFilter');
-        select.innerHTML = '<option value="All">Tất cả Tỉnh thành</option>';
-        provinces.forEach(p => select.innerHTML += `<option value="${p}">${p}</option>`);
-        
-        updateDashboard();
-    }
-
-    document.getElementById('provinceFilter').onchange = updateDashboard;
-
-    function updateDashboard() {
-        const provinceVal = document.getElementById('provinceFilter').value;
-        const filtered = provinceVal === 'All' ? rawData : rawData.filter(d => d['Province'] === provinceVal);
-
-        // 1. KPI
-        document.getElementById('totalOrders').innerText = filtered.length;
-        document.getElementById('urgentOrders').innerText = filtered.filter(d => d['Urgent Order'] === 'Yes').length;
-        document.getElementById('totalProvinces').innerText = [...new Set(filtered.map(d => d['Province']))].length;
-        document.getElementById('totalCaterers').innerText = [...new Set(filtered.map(d => d['Caterer Name']))].length;
-
-        // 2. Bar Chart (Huyện)
-        const dMap = {}; filtered.forEach(d => { if(d.District) dMap[d.District] = (dMap[d.District] || 0) + 1 });
-        const topD = Object.entries(dMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
-        Plotly.newPlot('districtBar', [{x: topD.map(i=>i[0]), y: topD.map(i=>i[1]), type:'bar', marker:{color:'#008200'}}], {height:350, margin:{t:10, b:40}}, {responsive: true});
-
-        // 3. Pie Chart (Loại tiệc)
-        const tMap = {}; filtered.forEach(d => { if(d['Banquet Type']) tMap[d['Banquet Type']] = (tMap[d['Banquet Type']] || 0) + 1 });
-        Plotly.newPlot('typePie', [{labels: Object.keys(tMap), values: Object.values(tMap), type:'pie', hole:0.4, marker:{colors:['#008200','#27ae60','#a2de96']}}], {height:350, margin:{t:10}}, {responsive: true});
-
-        // 4. Line Chart (Xu hướng)
-        const trend = {}; filtered.forEach(d => { if(d['Order Date']) trend[d['Order Date']] = (trend[d['Order Date']] || 0) + 1 });
-        const sortedDates = Object.keys(trend).sort((a,b) => new Date(a.split('/').reverse().join('-')) - new Date(b.split('/').reverse().join('-')));
-        Plotly.newPlot('trendLine', [{x: sortedDates, y: sortedDates.map(d=>trend[d]), mode:'lines+markers', line:{color:'#008200', width:3}}], {height:300, margin:{t:10}}, {responsive: true});
-
-        // 5. Table
-        let tableHtml = `<table><thead><tr><th>Ngày đặt</th><th>Tỉnh</th><th>Huyện</th><th>Đại lý</th></tr></thead><tbody>`;
-        filtered.slice(0, 20).forEach(d => {
-            tableHtml += `<tr><td>${d['Order Date']||''}</td><td>${d['Province']||''}</td><td>${d['District']||''}</td><td>${d['Caterer Name']||''}</td></tr>`;
-        });
-        document.getElementById('tableContainer').innerHTML = tableHtml + `</tbody></table>`;
-        
-        renderRegionCharts(filtered);
-    }
-
-    function renderRegionCharts(data) {
-        const container = document.getElementById('regionContainer');
-        container.innerHTML = "";
-        const regions = [...new Set(data.map(d => d.Region))].filter(Boolean);
-        
-        regions.forEach(r => {
-            const card = document.createElement('div');
-            card.className = "card";
-            const chartId = "chart_" + Math.random().toString(36).substr(2, 9);
-            card.innerHTML = `<h3>Vùng: ${r}</h3><div id="${chartId}"></div>`;
-            container.appendChild(card);
-            
-            const catMap = {};
-            data.filter(d => d.Region === r).forEach(d => catMap[d['Caterer Name']] = (catMap[d['Caterer Name']] || 0) + 1);
-            const sorted = Object.entries(catMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
-            
-            Plotly.newPlot(chartId, [{y: sorted.map(i=>i[0]), x: sorted.map(i=>i[1]), type:'bar', orientation:'h', marker:{color:'#27ae60'}}], {height:250, margin:{t:10, l:120}}, {responsive: true});
-        });
-    }
-
-    function switchTab(type) {
-        document.getElementById('overviewContent').style.display = type === 'overview' ? 'block' : 'none';
-        document.getElementById('regionContent').style.display = type === 'region' ? 'block' : 'none';
-        document.getElementById('tab1').classList.toggle('active', type === 'overview');
-        document.getElementById('tab2').classList.toggle('active', type === 'region');
-        window.dispatchEvent(new Event('resize'));
-    }
-
-    function showLoading(s) { document.getElementById('loading').style.display = s ? 'flex' : 'none'; }
-
-    // XUẤT CSV
-    document.getElementById('downloadBtn').onclick = function() {
-        if(rawData.length === 0) return alert("Chưa có dữ liệu!");
-        const csv = Papa.unparse(rawData);
-        const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = "bao_cao_tiec.csv";
-        link.click();
-    };
+  });
+}
 </script>
 </body>
 </html>
